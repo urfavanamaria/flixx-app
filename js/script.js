@@ -1,9 +1,19 @@
 const global = {
   currentPage: window.location.pathname,
+  search: {
+    term: '',
+    type: '',
+    page: 1,
+    totalPages: 1,
+  },
+  api: {
+    apiKey: '6b3b7fd245142e73db0300908fc3b087',
+    apiUrl: 'https://api.themoviedb.org/3/',
+  },
 };
 
 async function displayPopularMovies() {
-  const { results } = await fetchAPIData('/movie/popular');
+  const { results } = await fetchAPIData('movie/popular');
 
   results.forEach((movie) => {
     const div = document.createElement('div');
@@ -17,26 +27,28 @@ async function displayPopularMovies() {
               class="card-img-top"
               alt="${movie.title}"
             />`
-              : `            <img
+              : `<img
               src="images/no-image.jpg"
               class="card-img-top"
               alt="${movie.title}"
             />`
           }
-
           </a>
           <div class="card-body">
             <h5 class="card-title">${movie.title}</h5>
             <p class="card-text">
               <small class="text-muted">Release: ${movie.release_date}</small>
             </p>
-          </div>`;
+          </div>
+          `;
+
     document.querySelector('#popular-movies').appendChild(div);
   });
 }
 
+// Display 20 most popular tv shows
 async function displayPopularShows() {
-  const { results } = await fetchAPIData('/tv/popular');
+  const { results } = await fetchAPIData('tv/popular');
 
   results.forEach((show) => {
     const div = document.createElement('div');
@@ -50,33 +62,36 @@ async function displayPopularShows() {
               class="card-img-top"
               alt="${show.name}"
             />`
-              : `            <img
+              : `<img
               src="images/no-image.jpg"
               class="card-img-top"
               alt="${show.name}"
             />`
           }
-
           </a>
           <div class="card-body">
             <h5 class="card-title">${show.name}</h5>
             <p class="card-text">
               <small class="text-muted">Air Date: ${show.first_air_date}</small>
             </p>
-          </div>`;
+          </div>
+          `;
+
     document.querySelector('#popular-shows').appendChild(div);
   });
 }
+
 // Display Movie Details
 async function displayMovieDetails() {
   const movieId = window.location.search.split('=')[1];
 
-  const movie = await fetchAPIData(`/movie/${movieId}`);
+  const movie = await fetchAPIData(`movie/${movieId}`);
 
-  // overlay for background image
+  // Overlay for background image
   displayBackgroundImage('movie', movie.backdrop_path);
 
   const div = document.createElement('div');
+
   div.innerHTML = `
           <div class="details-top">
           <div>
@@ -87,7 +102,7 @@ async function displayMovieDetails() {
               class="card-img-top"
               alt="${movie.title}"
             />`
-              : `            <img
+              : `<img
               src="images/no-image.jpg"
               class="card-img-top"
               alt="${movie.title}"
@@ -124,28 +139,32 @@ async function displayMovieDetails() {
             )}</li>
             <li><span class="text-secondary">Runtime:</span> ${
               movie.runtime
-            } minute</li>
+            } minutes</li>
             <li><span class="text-secondary">Status:</span> ${movie.status}</li>
           </ul>
           <h4>Production Companies</h4>
-          <div class="list-group">${movie.production_companies
+          <div class="list-group">
+          ${movie.production_companies
             .map((company) => `<span>${company.name}</span>`)
-            .join(', ')}</div>
+            .join(', ')}
+            </div>
         </div>
 `;
+
   document.querySelector('#movie-details').appendChild(div);
 }
 
-// Display show Details
+// Display Show Details
 async function displayShowDetails() {
   const showId = window.location.search.split('=')[1];
 
-  const show = await fetchAPIData(`/tv/${showId}`);
+  const show = await fetchAPIData(`tv/${showId}`);
 
-  // overlay for background image
+  // Overlay for background image
   displayBackgroundImage('tv', show.backdrop_path);
 
   const div = document.createElement('div');
+
   div.innerHTML = `
           <div class="details-top">
           <div>
@@ -156,7 +175,7 @@ async function displayShowDetails() {
               class="card-img-top"
               alt="${show.name}"
             />`
-              : `            <img
+              : `<img
               src="images/no-image.jpg"
               class="card-img-top"
               alt="${show.name}"
@@ -179,7 +198,7 @@ async function displayShowDetails() {
             </ul>
             <a href="${
               show.homepage
-            }" target="_blank" class="btn">Visit Movie Homepage</a>
+            }" target="_blank" class="btn">Visit show Homepage</a>
           </div>
         </div>
         <div class="details-bottom">
@@ -197,15 +216,18 @@ async function displayShowDetails() {
             <li><span class="text-secondary">Status:</span> ${show.status}</li>
           </ul>
           <h4>Production Companies</h4>
-          <div class="list-group">${show.production_companies
+          <div class="list-group">
+          ${show.production_companies
             .map((company) => `<span>${company.name}</span>`)
-            .join(', ')}</div>
+            .join(', ')}
+            </div>
         </div>
 `;
+
   document.querySelector('#show-details').appendChild(div);
 }
 
-//Display Backdrop on details pag
+// Display Backdrop On Details Pages
 function displayBackgroundImage(type, backgroundPath) {
   const overlayDiv = document.createElement('div');
   overlayDiv.style.backgroundImage = `url(https://image.tmdb.org/t/p/original/${backgroundPath})`;
@@ -219,6 +241,7 @@ function displayBackgroundImage(type, backgroundPath) {
   overlayDiv.style.left = '0';
   overlayDiv.style.zIndex = '-1';
   overlayDiv.style.opacity = '0.1';
+
   if (type === 'movie') {
     document.querySelector('#movie-details').appendChild(overlayDiv);
   } else {
@@ -226,8 +249,75 @@ function displayBackgroundImage(type, backgroundPath) {
   }
 }
 
+// Search Movies/Shows
+async function search() {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+
+  global.search.type = urlParams.get('type');
+  global.search.term = urlParams.get('search-term');
+
+  if (global.search.term !== '' && global.search.term !== null) {
+    const { results, total_pages, page } = await searchAPIData();
+
+    if (results.length === 0) {
+      showAlert('No results found');
+      return;
+    }
+
+    displaySearchResults(results);
+
+    document.querySelector('#search-term').value = '';
+  } else {
+    showAlert('Please enter a search term');
+  }
+}
+
+function displaySearchResults(results) {
+  results.forEach((result) => {
+    const div = document.createElement('div');
+    div.classList.add('card');
+    div.innerHTML = `
+          <a href="${global.search.type}-details.html?id=${result.id}">
+          ${
+            result.poster_path
+              ? `<img
+              src="https://image.tmdb.org/t/p/w500/${result.poster_path}"
+              class="card-img-top"
+              alt="${
+                global.search.type === 'movie' ? result.title : result.name
+              }"
+            />`
+              : `<img
+              src="images/no-image.jpg"
+              class="card-img-top"
+              alt="${
+                global.search.type === 'movie' ? result.title : result.name
+              }"
+            />`
+          }
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">${
+              global.search.type === 'movie' ? result.title : result.name
+            }</h5>
+            <p class="card-text">
+              <small class="text-muted">Release: ${
+                global.search.type === 'movie'
+                  ? result.release_date
+                  : result.first_air_date
+              }</small>
+            </p>
+          </div>
+          `;
+
+    document.querySelector('#search-results').appendChild(div);
+  });
+}
+
+// Display Slider Movies
 async function displaySlider() {
-  const { results } = await fetchAPIData('/movie/now_playing');
+  const { results } = await fetchAPIData('movie/now_playing');
 
   results.forEach((movie) => {
     const div = document.createElement('div');
@@ -276,29 +366,63 @@ function initSwiper() {
   });
 }
 
-//fech data from TBDB API
+// Fetch data from TMDB API
 async function fetchAPIData(endpoint) {
-  const API_KEY = '6b3b7fd245142e73db0300908fc3b087';
-  const API_URL = `https://api.themoviedb.org/3`;
+  const API_KEY = global.api.apiKey;
+  const API_URL = global.api.apiUrl;
+
   showSpinner();
+
   const response = await fetch(
     `${API_URL}${endpoint}?api_key=${API_KEY}&language=en-US`
   );
+
   const data = await response.json();
+
   hideSpinner();
+
   return data;
+}
+
+// Make Request To Search
+async function searchAPIData() {
+  const API_KEY = global.api.apiKey;
+  const API_URL = global.api.apiUrl;
+
+  showSpinner();
+
+  const response = await fetch(
+    `${API_URL}search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}`
+  );
+
+  const data = await response.json();
+
+  hideSpinner();
+
+  return data;
+}
+
+// Show Alert
+function showAlert(message, className = 'error') {
+  const alertEl = document.createElement('div');
+  alertEl.classList.add('alert', className);
+  alertEl.appendChild(document.createTextNode(message));
+  document.querySelector('#alert').appendChild(alertEl);
+
+  setTimeout(() => alertEl.remove(), 3000);
 }
 
 function showSpinner() {
   document.querySelector('.spinner').classList.add('show');
 }
+
 function hideSpinner() {
   document.querySelector('.spinner').classList.remove('show');
 }
 
-//hilight active link
+// Highlight active link
 function highlightActiveLink() {
-  const links = document.querySelectorAll('nav a');
+  const links = document.querySelectorAll('.nav-link');
   links.forEach((link) => {
     if (link.getAttribute('href') === global.currentPage) {
       link.classList.add('active');
@@ -310,7 +434,7 @@ function addCommasToNumber(number) {
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-//init App
+// Init App
 function init() {
   switch (global.currentPage) {
     case '/':
@@ -328,12 +452,11 @@ function init() {
       displayShowDetails();
       break;
     case '/search.html':
-      loadContact();
+      search();
       break;
-    default:
-      loadNotFound();
   }
+
   highlightActiveLink();
 }
 
-document.addEventListener('DOMContentLoaded', () => init());
+document.addEventListener('DOMContentLoaded', init);
