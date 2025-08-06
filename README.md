@@ -2,6 +2,8 @@
 
 A sleek movie and TV show info app built with vanilla JavaScript. It fetches data from a public API and displays trending titles, ratings, and descriptions in a responsive layout.
 
+🔗 [Live Demo](https://flixx-app-blue.vercel.app)
+
 ## 🚀 Features
 
 - Browse trending movies and TV shows
