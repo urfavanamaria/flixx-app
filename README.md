@@ -15,7 +15,7 @@ A sleek movie and TV show info app built with vanilla JavaScript. It fetches dat
 
 - JavaScript (ES6+)
 - HTML5 & CSS3
-- TMDB API (or similar)
+- TMDB API
 - Optional: Bootstrap or custom styling
 
 ## 📚 Based On
